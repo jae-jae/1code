@@ -25,7 +25,7 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "ts:check": "tsgo --noEmit",
-    "postinstall": "node -e \"if(!process.env.VERCEL){require('child_process').execSync('electron-rebuild -f -w better-sqlite3,node-pty',{stdio:'inherit'})}\""
+    "postinstall": "node -e \"if(!process.env.VERCEL && !process.env.CI){require('child_process').execSync('electron-rebuild -f -w better-sqlite3,node-pty',{stdio:'inherit'})}\""
   },
   "dependencies": {
     "@ai-sdk/react": "^3.0.14",
