@@ -1,0 +1,86 @@
+name: Build macOS
+
+# This workflow builds the macOS arm64 application and publishes to GitHub Releases.
+#
+# Required GitHub Secrets (for code signing and notarization):
+# - APPLE_ID: Your Apple ID email
+# - APPLE_APP_SPECIFIC_PASSWORD: App-specific password from appleid.apple.com
+# - APPLE_TEAM_ID: Your Apple Developer Team ID
+# - APPLE_CERTIFICATE: Base64-encoded .p12 certificate file
+# - APPLE_CERTIFICATE_PASSWORD: Password for the .p12 certificate
+#
+# To create the certificate secret:
+# 1. Export your Developer ID Application certificate from Keychain as .p12
+# 2. Run: base64 -i certificate.p12 | pbcopy
+# 3. Add the output as APPLE_CERTIFICATE secret in GitHub repo settings
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install
+
+      - name: Download Claude binary
+        run: bun run claude:download
+
+      - name: Build app
+        run: bun run build
+
+      - name: Package macOS (arm64)
+        run: bun run package:mac -- --arm64
+        env:
+          # Code signing and notarization (requires secrets to be set in GitHub repo settings)
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          # CSC_LINK is base64-encoded .p12 certificate file
+          CSC_LINK: ${{ secrets.APPLE_CERTIFICATE }}
+          CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+
+      - name: Get version from package.json
+        id: package_version
+        run: echo "version=$(node -p "require('./package.json').version")" >> $GITHUB_OUTPUT
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: macos-arm64-build
+          path: |
+            ./release/*.dmg
+            ./release/*.zip
+          retention-days: 7
+
+      - name: Create Release and Upload Assets
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: v${{ steps.package_version.outputs.version }}
+          name: Release v${{ steps.package_version.outputs.version }}
+          draft: false
+          prerelease: false
+          files: |
+            ./release/1Code-${{ steps.package_version.outputs.version }}-arm64.dmg
+            ./release/1Code-${{ steps.package_version.outputs.version }}-arm64-mac.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
