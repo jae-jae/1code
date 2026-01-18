@@ -54,14 +54,15 @@ jobs:
 
       - name: Package macOS (arm64)
         run: bun run package:mac -- --arm64
-        env:
-          # Code signing and notarization (requires secrets to be set in GitHub repo settings)
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-          # CSC_LINK is base64-encoded .p12 certificate file
-          CSC_LINK: ${{ secrets.APPLE_CERTIFICATE }}
-          CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        # Temporarily disabled code signing and notarization
+        # env:
+        #   # Code signing and notarization (requires secrets to be set in GitHub repo settings)
+        #   APPLE_ID: ${{ secrets.APPLE_ID }}
+        #   APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+        #   APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        #   # CSC_LINK is base64-encoded .p12 certificate file
+        #   CSC_LINK: ${{ secrets.APPLE_CERTIFICATE }}
+        #   CSC_KEY_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
 
       - name: Get version from package.json
         id: package_version
